@@ -7,7 +7,7 @@ description: "Finds every implementation-forking decision, scores them by impact
 
 ## Purpose
 
-Always respond in the exact language the user is using (auto-detect).
+Always respond in the exact language the user is using (auto-detect). If the user switches language mid-session, switch immediately and re-present the current decision summary in the new language before continuing.
 Find every decision point where guessing wrong would waste work.
 Score each fork. Ask about real ones. Auto-resolve obvious ones. Write a contract. Enforce it.
 
@@ -75,6 +75,9 @@ A fork IS:
 - Scope (single-user vs multi-user) — 10x complexity difference
 - Persistence (in-memory vs file vs database) — different architecture
 - Integration method (REST vs GraphQL vs RPC) — different patterns
+- Compliance/Regulatory (HIPAA, GDPR, PCI-DSS, industry standards like SCORM, MLS, HL7) — can make entire project illegal or unusable if missed
+
+**Regulated domain check:** If the domain involves healthcare, finance, transportation, education, or handles PII/payments — check for regulatory forks FIRST. Compliance forks are always HIGH impact, IMPOSSIBLE to reverse, and outrank all technical forks.
 
 ### Step 2: Declare Auto-Resolved Decisions
 
@@ -123,7 +126,11 @@ For each remaining MUST-ASK fork, starting with the highest-impact one:
 
 ### Step 5: Write Contract + Handoff
 
-**Write the `.zeroguess` file** to the project root:
+**Write the `.zeroguess` file** to the project root.
+
+**Purpose must always be locked.** Every contract starts with `purpose.what` and `purpose.why`. If clarification didn't surface these explicitly, synthesize them from the user's request + their answers. An agent that knows what tools to use but not what to build is useless.
+
+**Lock priority:** purpose → compliance (if applicable) → high-impact architectural decisions → auto-resolved context. Leave styling, analytics, and additive features as open questions.
 
 ```yaml
 # .zeroguess — Decision Contract
@@ -135,6 +142,12 @@ For each remaining MUST-ASK fork, starting with the highest-impact one:
 project: my-project
 created: 2026-03-15
 updated: 2026-03-15
+
+# PURPOSE must always be locked — this is what we're building and why
+purpose:
+  what: "Multi-chain crypto portfolio dashboard"
+  why: "Track wallet balances across EVM + Solana in one view"
+  locked: true
 
 decisions:
   platform:
