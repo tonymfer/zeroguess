@@ -46,18 +46,22 @@ Before asking anything, do this internally (do NOT show this to the user):
 
 #### Fork Scoring Heuristic
 
-For each fork, assess three dimensions:
+For each fork, assess four dimensions:
 
 | Dimension | High | Medium | Low |
 |-----------|------|--------|-----|
 | **Downstream Impact** | Changes DB schema, API, and frontend | Changes one layer | Cosmetic only |
 | **Reversibility** | Migration/rewrite needed | Refactor needed | Swap anytime |
 | **Context Available** | Nothing in project hints at answer | Partial clues | Config/file already decides it |
+| **Intent Clarity** | Purpose/motivation is unknown ("why?") | Partially clear | Obviously understood |
 
 **Decision rules:**
+- Intent Clarity LOW → **MUST ASK FIRST** (always priority 0 — before any technical fork)
 - Impact HIGH + Reversibility HARD + Context NO → **MUST ASK** (priority 1)
 - Impact HIGH + Context YES → **AUTO-RESOLVE** (declare, don't ask)
 - Impact LOW + Reversibility EASY → **SKIP** (not a real fork)
+
+**Greenfield rule:** When there is no project context (empty directory, no configs), intent forks outrank technical forks. Ask "what and why" before "how."
 - Impact MEDIUM + Context PARTIAL → **ASK WITH DEFAULT** (Surprise Me = the default)
 
 A fork is NOT:
