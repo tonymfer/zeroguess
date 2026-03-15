@@ -29,6 +29,7 @@ This skill does exactly one thing: clarify intent → write contract → stop.
 
 - The request is already crystal-clear with no forks (say "Nothing to clarify. Ready." and get out)
 - The user says "just do it" or "you decide" — respect that, exit immediately
+- The user is ideating, not building ("I want to build something cool", "give me side project ideas") — they need brainstorming, not decision contracts
 - Mid-implementation detail questions — those belong in the implementation phase
 
 ## Process
