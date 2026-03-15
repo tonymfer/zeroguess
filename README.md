@@ -1,22 +1,95 @@
 # ZeroGuess
 
-**End the "just do it" guessing forever.**
+**Stop guessing. Start contracting.**
 
-ZeroGuess finds every real implementation fork silently, forces explicit answers with concrete options + Surprise Me, and stops after max 5 questions.
-Pure clarification. Zero guesses. Done in 2-5 minutes.
+ZeroGuess finds every implementation fork, scores them by impact and reversibility, auto-resolves what your project already decides, asks about the rest, and writes a **machine-readable `.zeroguess` contract** that enforces decisions during implementation.
 
-## Why ZeroGuess
+Not a chatty Q&A session. A 2-5 minute interrogation that produces an enforceable contract.
 
-Every AI coding agent has the same failure mode: you say "build me X" and it guesses wrong on 3 decisions you never specified. Then you waste 20 minutes undoing bad assumptions.
+## The Problem
 
-ZeroGuess fixes this by:
+Every clarification tool — including good ones — produces prose summaries that get forgotten the moment implementation starts. The agent asks 4 great questions, gets answers, writes a paragraph, then silently makes 20 more decisions on its own.
 
-- **Silent Fork Analysis** — internally brainstorms 3-5 interpretations, finds where they diverge, only asks about real forks
-- **Concrete Options** — never "monolithic vs microservices", always "single Express server with all routes, or separate Lambda per endpoint"
-- **Surprise Me** — every question includes a best-guess option so you can skip if you trust the agent
-- **Hard 5-question limit** — zero fatigue, self-terminates and summarizes
-- **Auto language detection** — replies in whatever language you're using
-- **Anti-pattern guards** — won't ask about things it can read from your project context (tsconfig.json exists? it won't ask "TypeScript or JavaScript?")
+ZeroGuess fixes the full pipeline: **clarify → score → contract → enforce.**
+
+## How It Works
+
+```
+Request
+  ↓
+Silent Fork Analysis (internal)
+  - Score each fork: impact × reversibility × context available
+  - Auto-resolve: project already has Tailwind? Lock it, don't ask.
+  - Kill: low-impact, easily reversible? Skip.
+  ↓
+Declare Auto-Resolved (show what you already know)
+  "Stack: Next.js, Prisma, Tailwind ✓ — correct me if wrong"
+  ↓
+Ask Remaining Forks (max 5, one at a time)
+  Each with Surprise Me option
+  ↓
+Write .zeroguess Contract (machine-readable YAML)
+  ↓
+Implementation: agent checks contract before every decision
+  - In contract → use locked value
+  - In open_questions → STOP and ask
+  - Not mentioned + high impact → STOP and ask
+```
+
+## The `.zeroguess` Contract
+
+```yaml
+# .zeroguess — Decision Contract
+project: crypto-dashboard
+created: 2026-03-15
+
+decisions:
+  platform:
+    value: web
+    source: user
+    impact: high
+    reversibility: hard
+    locked: true
+
+  database:
+    value: PostgreSQL via Prisma
+    source: auto-resolved   # found prisma/schema.prisma
+    impact: high
+    reversibility: hard
+    locked: true
+
+open_questions:
+  - "Caching strategy"
+  - "Error monitoring"
+```
+
+Agents read this file. Locked decisions are respected. Open questions trigger a stop-and-ask. No more silent assumptions.
+
+## Fork Scoring
+
+Not fake math. Categorical heuristics:
+
+| Dimension | High | Medium | Low |
+|-----------|------|--------|-----|
+| **Impact** | Changes DB + API + frontend | Changes one layer | Cosmetic |
+| **Reversibility** | Migration needed | Refactor needed | Swap anytime |
+| **Context** | Nothing hints at answer | Partial clues | Already decided |
+
+- HIGH impact + HARD to reverse + NO context → **must ask**
+- HIGH impact + context available → **auto-resolve** (declare, don't ask)
+- LOW impact + easy to reverse → **skip**
+
+## What's Different
+
+| Feature | Typical clarifier | ZeroGuess |
+|---------|------------------|-----------|
+| Output | Prose summary (forgotten) | `.zeroguess` contract (enforced) |
+| Project awareness | Sometimes reads files | Scores forks against project context |
+| Auto-resolve | No | Yes — declares known answers, skips questions |
+| Implementation enforcement | None | Contract checked during coding |
+| Cross-session memory | None | `.zeroguess` persists in repo |
+| Surprise Me | No | Every question |
+| Question limit | None | Hard cap at 5 |
 
 ## Install
 
@@ -24,69 +97,20 @@ ZeroGuess fixes this by:
 # For GSD / pi users
 mkdir -p ~/.agents/skills/zeroguess
 
-# For Claude Code users
+# For Claude Code users  
 mkdir -p ~/.claude/skills/zeroguess
 ```
 
-Copy [`SKILL.md`](./SKILL.md) into the directory. Restart your agent. Done.
+Copy [`SKILL.md`](./SKILL.md) into the directory. Restart your agent.
 
 ## Usage
 
-Type any ambiguous request, then invoke:
-
 ```
-/zeroguess
-```
-
-Or with GSD:
-
-```
-/gsd-zeroguess
+/zeroguess        # standalone
+/gsd-zeroguess    # with GSD
 ```
 
-### Example
-
-**You:** "Build me a chat app"
-
-**ZeroGuess internally:** detects 3 forks (who's chatting, real-time vs polling, single vs multi-user)
-
-**ZeroGuess asks:** "Who's chatting with whom?"
-- People with each other (like Slack)
-- User with an AI (like ChatGPT)
-- Surprise me — real-time group chat with rooms and WebSocket
-
-**After 2-4 questions:** summary + handoff to brainstorm, plan, or build.
-
-### Clear requests get no questions
-
-**You:** "Add dark mode toggle to the settings page"
-
-**ZeroGuess:** "Nothing to clarify. Ready to implement."
-
-## How It Works
-
-```
-Request → Silent Fork Analysis → Ask One Fork at a Time → Summary → Handoff
-              (internal)           (max 5 questions)       (user picks next step)
-```
-
-1. **Fork Analysis** — reads your request + project context, identifies where different interpretations lead to completely different code
-2. **Kill Non-Forks** — cosmetic choices, trivial defaults, things already decided by your project = skipped
-3. **Ask** — one question per message, 2-3 concrete options, always includes Surprise Me
-4. **Stop** — when no forks remain, user says "go", or 5 questions reached
-5. **Handoff** — summary of decisions + choice of brainstorm / plan / build
-
-## What Makes It Different
-
-| Feature | Other clarifiers | ZeroGuess |
-|---------|-----------------|-----------|
-| Shows internal analysis | Often | Never |
-| Question limit | None (asks forever) | Hard cap at 5 |
-| Option style | Abstract jargon | Concrete builds |
-| "You decide" escape | Ignored | Respected immediately |
-| Project context awareness | Rare | Reads files first, skips known answers |
-| Surprise Me option | No | Every question |
-| Language | English only | Auto-detects user's language |
+The `.zeroguess` file is committed to your repo. Any agent that reads it will respect your decisions.
 
 ## License
 
@@ -96,4 +120,4 @@ MIT
 
 Built by [@toismfer](https://github.com/toismfer)
 
-⭐ Star if it saves you from bad guesses
+⭐ Star if it saves you from silent assumptions
